@@ -8,10 +8,12 @@
 - 创建是否要等很久
 - 如何得知输出结果
 - 错误信息和如何监控
+- 参见[buildspec_1.yml](buildspec_1.yml)
 
 ## 2、Pipeline中Step对于多文件的支持
 - Step中有多个Python文件，并且不在一个目录下，它们之间有调用关系
 - Step中有requirements.txt文件，Step能否自动安装他们
+- 参见[buildspec_2.yml](buildspec_2.yml)
 
 ## 3、寻找合适的数据源，上传到S3
 - 数据源的要求：
@@ -24,3 +26,4 @@
 ## 4、编写DWA
 - Pipeline支持三个参数：input、output、是否包含target列
 - 代码既要满足在Training Pipeline的Preprocessing以前执行，也要满足Inference Pipeline
+- 参见[buildspec_3.yml](buildspec_3.yml)

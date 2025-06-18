@@ -8,10 +8,12 @@ This branch is used to test the following features:
 - Does the creation process take a long time?
 - How to obtain the output results?
 - Error messages and how to monitor them
+- Refer to [buildspec_1.yml](buildspec_1.yml)
 
 ## 2. Support for multiple files in Pipeline Steps
 - The Step contains multiple Python files, located in different directories, with dependencies between them
 - The Step includes a requirements.txt file; can the Step automatically install these dependencies?
+- Refer to [buildspec_2.yml](buildspec_2.yml)
 
 ## 3. Find a suitable data source and upload it to S3
 - Data source requirements:
@@ -24,3 +26,4 @@ This branch is used to test the following features:
 ## 4. Write DWA
 - The Pipeline supports three parameters: input, output, and whether it includes a target column
 - The code must support execution before Preprocessing Step in the Training Pipeline and also satisfy the Inference Pipeline
+- Refer to [buildspec_3.yml](buildspec_3.yml)
