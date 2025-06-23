@@ -1,7 +1,4 @@
 import boto3
-from datetime import datetime
-import argparse
-import time
 
 
 def delete_old_files(bucket_name: str) -> None:
@@ -28,29 +25,3 @@ def create_random_file_in_s3(bucket_name: str, file_name: str, content: str) -> 
     # delete the files first
     delete_old_files(bucket_name)
     s3.put_object(Bucket=bucket_name, Key=file_name, Body=content)
-
-
-if __name__ == "__main__":
-    """
-    python3 src/dwa.py --bucket_name XXXX
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--bucket_name", type=str, required=True, help="Input bucket_name"
-    )
-    parser.add_argument(
-        "--sleep",
-        type=int,
-        required=False,
-        default=0,
-        help="Input sleep time in seconds",
-    )
-    args = parser.parse_args()
-
-    file_name = f"example_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-    content = "This is a random file content."
-
-    if args.sleep > 0:
-        time.sleep(args.sleep)
-
-    create_random_file_in_s3(args.bucket_name, file_name, content)

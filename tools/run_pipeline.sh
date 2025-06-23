@@ -6,7 +6,7 @@
 if [ -z "$1" ]; then
     echo "Usage: $0 <pipeline-name>"
     echo "<pipeline-name> list:"
-    echo "- DWAPipeline-Simple-Run"
+    echo "- DWAPipeline-S-1"
     exit 1
 fi
 

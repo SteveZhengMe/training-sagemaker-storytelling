@@ -1,0 +1,10 @@
+[
+    {
+        "Name": "bucket_name",
+        "Value": "[DWA_BUCKET_NAME]"
+    },
+    {
+        "Name": "sleep", 
+        "Value": "0"
+    }
+]
