@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import argparse
 import sagemaker
+from sagemaker import image_uris
+from sagemaker.session import get_execution_role, Session
 from sagemaker.processing import (
     Processor,
     ScriptProcessor,
@@ -22,8 +24,8 @@ class DWAPipeline(ABC):
         self.env = {}
         try:
             # Use it if you are running this script in a SageMaker Studio environment
-            role = sagemaker.get_execution_role()
-            region = sagemaker.Session().boto_region_name
+            role = get_execution_role()
+            region = Session().boto_region_name
         except ValueError:
             # set the role manually if not in SageMaker Studio
             print("Not in SageMaker Studio, using environment variable for role.")
@@ -50,7 +52,7 @@ class DWAPipeline(ABC):
     def _init_processor(self) -> Processor:
         return ScriptProcessor(
             # see all the image_uris and versions here: https://docs.aws.amazon.com/sagemaker/latest/dg-ecr-paths/ecr-us-east-1.html#spark-us-east-1
-            image_uri=sagemaker.image_uris.retrieve(
+            image_uri=image_uris.retrieve(
                 framework="spark",  # Compatible with the code exported from Glue
                 region=self.env.get("region"),
                 version="3.2",
@@ -69,7 +71,7 @@ class DWAPipeline(ABC):
         processor: Processor,
         job_arguments: list,
         input_output: list,
-    ):
+    ) -> ProcessingStep:
         pass
 
     def create_pipeline(self, pipeline_name: str) -> Pipeline:
@@ -94,7 +96,7 @@ class DWAPipeline(ABC):
             sagemaker_session=(
                 LocalPipelineSession()
                 if self.env.get("local_run")
-                else sagemaker.Session()
+                else Session()
             ),
             parameters=[bucket_name_param, sleep_param],
             pipeline_definition_config=PipelineDefinitionConfig(
@@ -104,13 +106,13 @@ class DWAPipeline(ABC):
 
         self._check_remote_existing(pipeline_name)
 
-        pipeline.create(role_arn=self.env.get("role"))
+        pipeline.create(role_arn=str(self.env.get("role")))
         return pipeline
 
     def _check_remote_existing(self, pipeline_name: str) -> None:
         if not self.env.get("local_run"):
             try:
-                response = sagemaker.Session().sagemaker_client.delete_pipeline(
+                response = Session().sagemaker_client.delete_pipeline(
                     PipelineName=pipeline_name
                 )
                 print(f"Pipeline ARN: {response['PipelineArn']}")

@@ -32,6 +32,7 @@
             "Action": "sts:AssumeRole"
         }
     ```
+    - 使用DevContainer的时候，不能使用Docker-Outside-Docker，否则Python文件无法注入，只能使用docker-in-docker方式
 
 ## 2、Pipeline中Step对于多文件的支持 - PySparkProcessor
 - Step中有多个Python文件，并且不在一个目录下，它们之间有调用关系

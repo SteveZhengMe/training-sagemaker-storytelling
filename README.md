@@ -32,6 +32,7 @@ This branch is used to test the following features:
             "Action": "sts:AssumeRole"
         }
     ```
+    - The python file cannot ingest to the Sagemaker container if using "docker-outside-docker" in DevContainer, you must use docker-in-docker.
 
 ## 2. Support for multiple files in Pipeline Steps - PySparkProcessor
 - The Step contains multiple Python files, located in different directories, with dependencies between them
