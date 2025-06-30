@@ -1,1 +1,13 @@
-buildspec_1.yml
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.10
+    commands:
+      - pip3 install --upgrade pip
+      - pip3 install -r requirements.txt
+
+  build:
+    commands:
+      - python3 src/dwa_${SCENARIO}/pipeline.py

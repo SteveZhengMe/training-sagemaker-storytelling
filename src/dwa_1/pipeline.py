@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import argparse
-import sagemaker
+from typing import Any, Union
 from sagemaker import image_uris
 from sagemaker.session import get_execution_role, Session
 from sagemaker.processing import (
@@ -9,6 +9,7 @@ from sagemaker.processing import (
     ProcessingInput,
     ProcessingOutput,
 )
+from sagemaker.spark.processing import PySparkProcessor
 from sagemaker.workflow.steps import ProcessingStep
 from sagemaker.workflow.pipeline import Pipeline
 from sagemaker.workflow.pipeline_context import LocalPipelineSession
@@ -19,7 +20,7 @@ import dotenv
 from botocore.exceptions import ClientError
 
 
-class DWAPipeline(ABC):
+class DWAPipeline:
     def __init__(self, bucket_name: str, local_run=True):
         self.env = {}
         try:
@@ -49,8 +50,8 @@ class DWAPipeline(ABC):
 
         self.env["local_run"] = local_run
 
-    def _init_processor(self) -> Processor:
-        return ScriptProcessor(
+    def _init_processing_step(self, step_name, job_arguments, input_output):
+        script_processor = ScriptProcessor(
             # see all the image_uris and versions here: https://docs.aws.amazon.com/sagemaker/latest/dg-ecr-paths/ecr-us-east-1.html#spark-us-east-1
             image_uri=image_uris.retrieve(
                 framework="spark",  # Compatible with the code exported from Glue
@@ -61,29 +62,37 @@ class DWAPipeline(ABC):
             command=["python3"],
             role=self.env.get("role"),
             instance_count=1,
-            instance_type="local" if self.env.get("local_run") else "ml.t3.medium",
+            instance_type="local" if self.env.get(
+                "local_run") else "ml.t3.medium",
         )
 
-    @abstractmethod
-    def _init_processing_step(
-        self,
-        step_name: str,
-        processor: Processor,
-        job_arguments: list,
-        input_output: list,
-    ) -> ProcessingStep:
-        pass
+        return ProcessingStep(
+            name=step_name,
+            processor=script_processor,
+            code="src/dwa_1/processing.py",
+            job_arguments=job_arguments,
+            inputs=[
+                ProcessingInput(
+                    source=input_output[0], destination="/opt/ml/processing/input"
+                )
+            ],
+            outputs=[
+                ProcessingOutput(
+                    source="/opt/ml/processing/output", destination=input_output[1]
+                )
+            ],
+        )
 
     def create_pipeline(self, pipeline_name: str) -> Pipeline:
-        bucket_name_param = ParameterString(name="bucket_name")
-        sleep_param = ParameterString(name="sleep")
+        bucket_name_param = ParameterString(
+            name="bucket_name", default_value=os.getenv("DWA_BUCKET_NAME", ""))
+        sleep_param = ParameterString(name="sleep", default_value="0")
 
         pipeline = Pipeline(
             name=pipeline_name,
             steps=[
                 self._init_processing_step(
                     "DWAStep",
-                    self._init_processor(),
                     [
                         "--bucket_name",
                         bucket_name_param,
@@ -104,78 +113,8 @@ class DWAPipeline(ABC):
             ),
         )
 
-        self._check_remote_existing(pipeline_name)
-
-        pipeline.create(role_arn=str(self.env.get("role")))
+        pipeline.upsert(role_arn=str(self.env.get("role")))
         return pipeline
-
-    def _check_remote_existing(self, pipeline_name: str) -> None:
-        if not self.env.get("local_run"):
-            try:
-                response = Session().sagemaker_client.delete_pipeline(
-                    PipelineName=pipeline_name
-                )
-                print(f"Pipeline ARN: {response['PipelineArn']}")
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "ResourceNotFound":
-                    print(
-                        f"Pipeline '{pipeline.name}' does not exist, nothing to delete"
-                    )
-                else:
-                    print(f"✗ Error deleting pipeline: {e}")
-                    raise
-            except Exception:
-                raise
-
-
-class DWAPipeline_1(DWAPipeline):
-    def _init_processing_step(self, step_name, processor, job_arguments, input_output):
-        return ProcessingStep(
-            name=step_name,
-            processor=processor,
-            code="src/dwa_1.py",
-            job_arguments=job_arguments,
-            inputs=[
-                ProcessingInput(
-                    source=input_output[0], destination="/opt/ml/processing/input"
-                )
-            ],
-            outputs=[
-                ProcessingOutput(
-                    source="/opt/ml/processing/output", destination=input_output[1]
-                )
-            ],
-        )
-
-
-class DWAPipeline_2(DWAPipeline):
-    def _init_processing_step(self, step_name, processor, job_arguments, input_output):
-        return ProcessingStep(
-            name=step_name,
-            processor=processor,
-            code="src/dwa_2.py",
-            job_arguments=job_arguments,
-            inputs=[
-                ProcessingInput(
-                    source=input_output[0], destination="/opt/ml/processing/input"
-                )
-            ],
-            outputs=[
-                ProcessingOutput(
-                    source="/opt/ml/processing/output", destination=input_output[1]
-                )
-            ],
-        )
-
-
-class DWAPipeline_3(DWAPipeline):
-    def _init_processing_step(self, step_name, processor, job_arguments, input_output):
-        pass
-
-
-class DWAPipeline_4(DWAPipeline):
-    def _init_processing_step(self, step_name, processor, job_arguments, input_output):
-        pass
 
 
 if __name__ == "__main__":
@@ -192,19 +131,14 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv()
     bucket_name = os.getenv("DWA_BUCKET_NAME", "")
-    scenario = os.getenv("MAIN_SCENARIO", "1")
 
     if not bucket_name:
-        raise ValueError("Please set the DWA_BUCKET_NAME environment variable.")
+        raise ValueError(
+            "Please set the DWA_BUCKET_NAME environment variable.")
 
-    # Dynamically create DWAPipeline_# instance based on scenario
-    try:
-        pipeline_class = globals()[f"DWAPipeline_{scenario}"]
-        dwa_pipeline = pipeline_class(bucket_name, local_run=args.local)
-    except KeyError:
-        raise ValueError(f"Unknown scenario: {scenario}")
+    pipeline_class = DWAPipeline(bucket_name, local_run=args.local)
+    pipeline = pipeline_class.create_pipeline("DWAPipeline-Scenario-1")
 
-    pipeline = dwa_pipeline.create_pipeline(f"DWAPipeline-S-{scenario}")
     if args.local:
         # if local, run it
         execution = pipeline.start(

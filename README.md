@@ -1,16 +1,16 @@
 # Description
 
-This branch is used to test the following features:
+This branch is used to experiment with the following features:
 
-## 1. Execute Python code for "Creating a SageMaker Pipeline" on CodeBuild
-- Can it be built?
-- After building, can the Pipeline be run using the CLI?
-- Does the creation process take a long time?
-- How to obtain the output results?
-- Error messages and how to monitor them
-- Refer to [buildspec_1.yml](buildspec_1.yml) and [main_1.py](src/main_1.py)
+## 1. Execute Python code for "Creating Sagemaker Pipeline" on CodeBuild - ScriptProcessor
+- Whether it can be created
+- Whether the Pipeline can be run via CLI after creation
+- Whether creation takes a long time
+- How to retrieve output results
+- Error information and how to monitor
+- See [pipeline.py](src/dwa_1/pipeline.py)
 - Notes:
-  - IAM CodeBuild Execution Role, add policy: AmazonSageMakerServiceCatalogProductsCodeBuildServiceRolePolicy and below customized policies:
+  - Add the following Policy to IAM CodeBuild Execution Role: AmazonSageMakerServiceCatalogProductsCodeBuildServiceRolePolicy and the custom one below
     ```yaml
         # In policies
         {
@@ -32,29 +32,31 @@ This branch is used to test the following features:
             "Action": "sts:AssumeRole"
         }
     ```
-    - The python file cannot ingest to the Sagemaker container if using "docker-outside-docker" in DevContainer, you must use docker-in-docker.
+    - When using DevContainer, Docker-Outside-Docker cannot be used, otherwise Python files cannot be injected. Only docker-in-docker can be used.
 
-## 2. Support for multiple files in Pipeline Steps - PySparkProcessor
-- The Step contains multiple Python files, located in different directories, with dependencies between them
-- The Step includes a requirements.txt file; can the Step automatically install these dependencies?
-- Refer to [buildspec_2.yml](buildspec_2.yml) and [main_2.py](src/main_2.py)
+## 2. Execute Python code for "Creating Sagemaker Pipeline" on CodeBuild - PySparkProcessor
+- Use PySparkProcessor to start a Spark Server in the container, process data, and then return the output to S3
+- This is a real example using tools.py to generate csv data
+- See [pipeline.py](src/dwa_2/pipeline.py)
+- Notes:
+    - If you want to view logs in CloudWatch, add CloudWatch Log permissions to Sagemaker's execution role
 
-## 3. Support for multiple files in Pipeline Steps - ScriptProcessor
-- The Step contains multiple Python files, located in different directories, with dependencies between them
-- The Step includes a requirements.txt file; can the Step automatically install these dependencies?
-- Refer to [buildspec_3.yml](buildspec_2.yml) and [main_3.py](src/main_2.py)
+## 3. Support for multiple files in Pipeline Steps
+- Regardless of which Processor is used, ProcessingStep only supports one Python file as source code
+- If ProcessingStep contains multiple Python files not in the same directory, with dependencies or a requirements.txt file, then the input script needs to run `pip -r` and dynamically import within Python
+- See [pipeline.py](src/dwa_3/pipeline.py)
 
-## 4. Write DWA
-- The Pipeline supports three parameters: input, output, and whether it includes a target column
-- The code must support execution before Preprocessing Step in the Training Pipeline and also satisfy the Inference Pipeline
-- Refer to [buildspec_4.yml](buildspec_3.yml) and [main_4.py](src/main_3.py)
+## 4. Writing DWA
+- The Pipeline supports three parameters: input, output, and whether to include the target column
+- The code must be compatible with both Preprocessing in the Training Pipeline and the Inference Pipeline
+- See [pipeline.py](src/dwa_4/pipeline.py)
 
-## Others
+## Other
 
-### A. Find a suitable data source and upload it to S3
-- Data source requirements:
-    - Requires general ETL operations, such as handling null values
-    - Requires preprocessing with joblib support, such as standardization
-    - The data source should be simple, making it easy to generate fake data for Quality, Drift, Bias, etc., tests; or, the data source should be large enough to easily be split to 20 subsets
-- Plan the S3 directory structure, such as input, output, etc.
-- Write a program that can generate new data or process a batch of data when executed
+### A. Finding data sources
+- Requirements for data sources:
+    - Require standard ETL tasks like handling nulls, etc.
+    - Require Preprocessing with joblib support, such as standardization
+    - Data should be simple for generating dummy data to test Quality, Drift, Bias, etc., or large enough to easily generate 20x variations
+- Plan S3 directory structure such as input, output, etc.
+- Write programs that can generate new data or provide a batch of data on execution

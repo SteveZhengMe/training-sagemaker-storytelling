@@ -2,13 +2,13 @@
 
 这个分支用来尝试下面的功能：
 
-## 1、在CodeBuild上执行“创建Sagemaker Pipeline”的Python代码
+## 1、在CodeBuild上执行“创建Sagemaker Pipeline”的Python代码 - ScriptProcessor
 - 是否可以建
 - 建好后是否可以使用CLI运行这个Pipeline
 - 创建是否要等很久
 - 如何得知输出结果
 - 错误信息和如何监控
-- 参见[buildspec_1.yml](buildspec_1.yml)和[main_1.py](src/main_1.py)
+- 参见[buildspec.yml](buildspec.yml)和[pipeline.py](src/dwa_1/pipeline.py)
 - 笔记：
   - IAM CodeBuild Execution Role增加Policy: AmazonSageMakerServiceCatalogProductsCodeBuildServiceRolePolicy和下面的Customized
     ```yaml
@@ -34,21 +34,23 @@
     ```
     - 使用DevContainer的时候，不能使用Docker-Outside-Docker，否则Python文件无法注入，只能使用docker-in-docker方式
 
-## 2、Pipeline中Step对于多文件的支持 - PySparkProcessor
-- Step中有多个Python文件，并且不在一个目录下，它们之间有调用关系
-- Step中有requirements.txt文件，Step能否自动安装他们
-- 参见[buildspec_2.yml](buildspec_2.yml)和[main_2.py](src/main_2.py)
+## 2、在CodeBuild上执行“创建Sagemaker Pipeline”的Python代码 - PySparkProcessor
+- 使用PySparkProcessor，在Container中启动Spark Server，处理数据，然后将输出返回到S3
+- 这是一个真实的例子，使用tools.py生成csv数据
+- 参见[pipeline.py](src/dwa_2/pipeline.py)
+- 笔记：
+    - 如果希望在CloudWatch查看Log，要给Sagemaker的execution role增加CloudWatch Log的权限
 
-## 3、Pipeline中Step对于多文件的支持 - ScriptProcessor
-- Step中有多个Python文件，并且不在一个目录下，它们之间有调用关系
-- Step中有requirements.txt文件，Step能否自动安装他们
-- 参见[buildspec_3.yml](buildspec_2.yml)和[main_3.py](src/main_2.py)
+## 3、Pipeline中Step对于多文件的支持
+- 不论使用哪个Processor，使用ProcessingStep的时候，都只支持一个Python文件作为源代码。
+- 如果ProcessingStep中有多个Python文件，并且不在一个目录下，它们之间有调用关系，或者有requirements.txt文件，则需要这个输入文件使用Python的方式运行`pip -r`以及动态import
+- 参见[pipeline.py](src/dwa_3/pipeline.py)
 
 
 ## 4、编写DWA
 - Pipeline支持三个参数：input、output、是否包含target列
 - 代码既要满足在Training Pipeline的Preprocessing以前执行，也要满足Inference Pipeline
-- 参见[buildspec_4.yml](buildspec_3.yml)和[main_4.py](src/main_3.py)
+- 参见[pipeline.py](src/dwa_4/pipeline.py)
 
 ## 其他
 

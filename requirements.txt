@@ -1,2 +1,4 @@
 python-dotenv
 sagemaker
+pyspark
+pandas
