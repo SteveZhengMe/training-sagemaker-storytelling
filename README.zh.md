@@ -46,12 +46,6 @@
 - 如果ProcessingStep中有多个Python文件，并且不在一个目录下，它们之间有调用关系，或者有requirements.txt文件，则需要这个输入文件使用Python的方式运行`pip -r`以及动态import
 - 参见[pipeline.py](src/dwa_3/pipeline.py)
 
-
-## 4、编写DWA
-- Pipeline支持三个参数：input、output、是否包含target列
-- 代码既要满足在Training Pipeline的Preprocessing以前执行，也要满足Inference Pipeline
-- 参见[pipeline.py](src/dwa_4/pipeline.py)
-
 ## 其他
 
 ### A、寻找数据源

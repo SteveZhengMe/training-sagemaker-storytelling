@@ -46,11 +46,6 @@ This branch is used to experiment with the following features:
 - If ProcessingStep contains multiple Python files not in the same directory, with dependencies or a requirements.txt file, then the input script needs to run `pip -r` and dynamically import within Python
 - See [pipeline.py](src/dwa_3/pipeline.py)
 
-## 4. Writing DWA
-- The Pipeline supports three parameters: input, output, and whether to include the target column
-- The code must be compatible with both Preprocessing in the Training Pipeline and the Inference Pipeline
-- See [pipeline.py](src/dwa_4/pipeline.py)
-
 ## Other
 
 ### A. Finding data sources
