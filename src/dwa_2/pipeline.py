@@ -36,7 +36,7 @@ def prepare_pipeline():
 
     output_data_param = ParameterString(
         name="OutputDataPath",
-        default_value=f"s3://{os.getenv("DWA_BUCKET_NAME", "")}/{pipeline_folder}/output/"
+        default_value=f's3://{os.getenv("DWA_BUCKET_NAME", "")}/{pipeline_folder}/output/',
     )
 
     # KW： 使用processor方式，而不是processor.run()方法，run是旧版本使用的方法
@@ -46,9 +46,9 @@ def prepare_pipeline():
         role=role,
         instance_count=1,
         # if ml.t3.medium is too small to run Spark, try ml.m5.large
-        instance_type='ml.t3.medium',
+        instance_type="ml.t3.medium",
         max_runtime_in_seconds=3600,
-        sagemaker_session=Session()
+        sagemaker_session=Session(),
     )
 
     processing_step = ProcessingStep(
@@ -63,7 +63,7 @@ def prepare_pipeline():
                 # KW：设定了destination后，数据就会被下载到Container指定的目录，而不是根据input_name决定
                 destination="/opt/ml/processing/input",
                 # KW：如果数据在本地，则传到S3以input_name目录下，以保证多个Input保持互相独立，如果没有设定destination，则数据会被下载到Container的input_name目录下。如果不指定，则会按照input_1,2等方式
-                input_name="sales_data"
+                input_name="sales_data",
             )
         ],
         outputs=[
@@ -71,7 +71,7 @@ def prepare_pipeline():
                 source="/opt/ml/processing/output",
                 # KW：S3上的这个目录（default_value=f"s3://{bucket}/{pipeline_folder}/output/"）不会自动建立，要自己建立
                 destination=output_data_param,
-                output_name="processed_data"
+                output_name="processed_data",
             )
         ],
         code="src/dwa_2/processing.py",
@@ -86,13 +86,13 @@ def prepare_pipeline():
         name=pipeline_folder,
         parameters=[output_data_param],
         steps=[processing_step],
-        sagemaker_session=Session()
+        sagemaker_session=Session(),
     )
 
     return pipeline
 
 
-def creatge_pipeline():
+def create_pipeline():
     pipeline = prepare_pipeline()
 
     # KW：使用upsert而不是create方法，实现“没有就新建，有就更新”
@@ -113,7 +113,7 @@ def execute_pipeline(pipeline, output_path=None):
     if output_path:
         parameters["OutputDataPath"] = output_path
 
-    print(f"\nStarting pipeline execution...")
+    print("\nStarting pipeline execution...")
     if parameters:
         print(f"Parameters: {parameters}")
 
@@ -125,15 +125,15 @@ def execute_pipeline(pipeline, output_path=None):
     status = execution.describe()
     print(f"Current Status: {status['PipelineExecutionStatus']}")
 
-    if status['PipelineExecutionStatus'] in ['Executing', 'Stopping']:
+    if status["PipelineExecutionStatus"] in ["Executing", "Stopping"]:
         print("\n🚀 Pipeline is running. Monitor options:")
 
         try:
             steps = execution.list_steps()
-            print(f"\n📋 Current step status:")
+            print("\n📋 Current step status:")
             for step in steps:
-                step_name = step.get('StepName', 'Unknown')
-                step_status = step.get('StepStatus', 'Unknown')
+                step_name = step.get("StepName", "Unknown")
+                step_status = step.get("StepStatus", "Unknown")
                 print(f"   - {step_name}: {step_status}")
         except Exception as e:
             print(f"   Could not retrieve step details: {e}")
@@ -145,10 +145,9 @@ def execute_pipeline(pipeline, output_path=None):
         final_status = execution.describe()
         print(f"\n🏁 Final Status: {final_status['PipelineExecutionStatus']}")
 
-        if final_status['PipelineExecutionStatus'] == 'Succeeded':
+        if final_status["PipelineExecutionStatus"] == "Succeeded":
             print("✅ Pipeline completed successfully!")
-            print(
-                f"📁 Output location: s3://{bucket}/{pipeline_folder}/output/")
+            print(f"📁 Output location: s3://{bucket}/{pipeline_folder}/output/")
             print("\n📊 Generated reports:")
             print("   - product_summary/")
             print("   - region_summary/")
@@ -163,7 +162,7 @@ def execute_pipeline(pipeline, output_path=None):
 
 if __name__ == "__main__":
     print("PySparkProcessor does NOT support local mode.")
-    pipeline = creatge_pipeline()
+    pipeline = create_pipeline()
 
     if pipeline is None:
         exit(1)
