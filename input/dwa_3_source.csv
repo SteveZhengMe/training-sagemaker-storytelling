@@ -1,0 +1,5 @@
+int, float, str, bool, mix, time
+0, 0.1, hoge, True, 0, 2017-01-01 03:04:05
+2, -2.23, foo, False, None, 2017-12-23 45:01:23
+3, 0, bar, true, inf, 2017-03-03 33:44:55
+-10, -9.9, , FALSE, nan, 2017-01-01 00:00:00
